@@ -103,12 +103,14 @@ from collections import defaultdict
 #from train.train import run
 from torchvision.transforms import v2
 import seaborn as sns
-from datasets.test import CustomDataset
+from datasets.new_dataset import CustomDataset
 import matplotlib.pyplot as plt
+from models.UNet_new import UNet
+
 
 def load_model(model_class, checkpoint_path, num_class=1):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    model = model_class(num_class)
+    model = model_class(n_channels=3, n_classes=1, bilinear=False)
     model.load_state_dict(torch.load(checkpoint_path))
     model = model.to(device)
     model.eval()
@@ -119,6 +121,7 @@ def save_predictions_with_originals_matplotlib(model, dataloader, output_folder)
     os.makedirs(output_folder, exist_ok=True)
 
     for i, (inputs) in enumerate(dataloader):
+        inputs, _ = inputs
         inputs = inputs.to(device)
 
         with torch.no_grad():
@@ -158,7 +161,7 @@ def show_predictions_with_heatmaps(model, dataloader, num_images_per_window=3):
 
     images, preds = [], []
 
-    for inputs in dataloader:
+    for inputs,_ in dataloader:
         inputs = inputs.to(device)
         with torch.no_grad():
             outputs = model(inputs)
@@ -204,17 +207,23 @@ if __name__ == '__main__':
 
     try:
         from models.UNetBatchNorm import UNetBatchNorm
-        test_dir = 'data/data_modified/Dichtflächen_Cropped/patched_NIO'
+        test_dir = 'data/data_modified/Dichtflächen/processed_NIO'
     
         transformations = v2.Compose([
             v2.PILToTensor(),
             v2.ToDtype(torch.float32, scale=True),
         ])
 
-        test_dataset = CustomDataset(test_dir, transform=transformations,is_labeled=None)
+        transformations1 = v2.Compose([
+            v2.PILToTensor(),
+            v2.ToDtype(torch.float32, scale=False),
+        ])
+
+        test_dataset = CustomDataset(test_dir,dataset_name='Dichtflächen', transform=transformations, mask_transform=transformations1, count=3)
+
         test_loader = DataLoader(test_dataset, batch_size=20, shuffle=True, num_workers=0)
 
-        model = load_model(UNetBatchNorm,'train/results/Dichtflächen_Cropped/Patched_BN_NIO_NoAug_20_Adam_StepLR.pth')
+        model = load_model(UNet,'train/results/Dichtflächen_Cropped/baseline_Patch250_LR0.0001_StepLR.pth')
 
         #test_model(UNetBatchNorm, test_loader, 'train/results/Dichtflächen/test_UNetBatchNorm.pth', 'test_models/evaluate/Dichfläche')
 

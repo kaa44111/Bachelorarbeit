@@ -13,9 +13,15 @@ project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if project_path not in sys.path:
     sys.path.append(project_path)
 
+from train.config import get_args  # Import CLI arguments
+# Get command-line arguments
+args = get_args()
+
 # Import your training utilities and U-Net model
-from train.train import run, train_model, print_metrics, select_scheduler, calc_loss
+from train.train import run, train_model, select_scheduler, calc_loss
 from models.UNetBatchNorm import UNetBatchNorm
+
+
 
 ##########################################
 # Helper function: Extract All Patches
@@ -79,17 +85,11 @@ class CustomDataset(Dataset):
         self.mask_files = []
 
         # Build corresponding lists for image and mask files.
-        # If your naming convention differs among your three datasets,
-        # you may adjust or extend this logic accordingly.
         for image_file in all_image_files:
             base_name = os.path.splitext(image_file)[0]
             self.image_files.append(image_file)
-            if dataset_name == "RetinaVessel":
-                mask_name = f"{base_name}.tiff"
-            elif dataset_name == "Ölflecken":
+            if dataset_name == "Ölflecken":
                 mask_name = f"{base_name}_1.bmp"
-            elif dataset_name == "circle_data":
-                mask_name = f"{base_name}1.png"
             else:
                 # Default: same base name with .tif extension.
                 mask_name = f"{base_name}.tif"
@@ -190,38 +190,47 @@ def binarize(tensor, threshold=0.001):
 ##########################################
 # Dataloader Setup Function
 ##########################################
-def get_dataloaders(root_dir, dataset_name=None, batch_size=2, split_size=0.8, patch_size=250):
+def get_dataloaders(root_dir, dataset_name=None, batch_size=2, split_size=0.8, patch_size=250, augment=False):
     """
-    Creates train and validation DataLoaders.
-    The transformation pipelines use torchvision.transforms.v2.
-    
+    Creates train and validation DataLoaders with optional augmentation.
+
     Parameters:
-       root_dir: Dataset root directory.
-       dataset_name: Name to help adjust file lookup (if needed).
-       batch_size: Number of images per batch.
-       split_size: Fraction for training split.
-       patch_size: Size for non-overlapping patch extraction.
+        root_dir (str): Dataset root directory.
+        dataset_name (str): Name to help adjust file lookup (if needed).
+        batch_size (int): Number of images per batch.
+        split_size (float): Fraction for training split.
+        patch_size (int): Size for non-overlapping patch extraction.
+        augment (bool): Whether to apply data augmentation.
     """
-    # Define the transformation pipelines for images and masks.
-    transformations = v2.Compose([
+    transformations = [
         v2.ToTensor(),
         v2.ToDtype(torch.float32, scale=True),
-    ])
-    transformations_mask = v2.Compose([
+    ]
+
+    if augment:
+        transformations.extend([
+            v2.RandomHorizontalFlip(p=0.5),
+            v2.RandomRotation(degrees=10),
+            v2.GaussianBlur(kernel_size=3)
+        ])
+
+    transformations_mask = [
         v2.ToTensor(),
         v2.ToDtype(torch.float32),
-        binarize,  # Binarize mask (0 or 1)
-        
-    ])
+        binarize  # Ensure mask is binary
+    ]
 
     dataset = CustomDataset(root_dir=root_dir, dataset_name=dataset_name,
-                            transform=transformations, mask_transform=transformations_mask,
+                            transform=v2.Compose(transformations),
+                            mask_transform=v2.Compose(transformations_mask),
                             patch_size=patch_size)
+
     dataset_size = len(dataset)
     train_size = int(split_size * dataset_size)
     val_size = dataset_size - train_size
 
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, val_size])
+
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
@@ -232,8 +241,8 @@ def get_dataloaders(root_dir, dataset_name=None, batch_size=2, split_size=0.8, p
 # Main (Example Usage)
 ##########################################
 if __name__ == '__main__':
-    data_dir = 'data/Prototype'
-    dataset_name = 'Prototype'  # Adjust if you have specific naming conventions
+    data_dir = 'data/data_modified/Dichtflächen/processed_NIO'
+    dataset_name = 'Dichtflächen'  # Adjust if you have specific naming conventions
 
     # For industrial inspection, you might set a patch size that captures fine defects;
     # here we use 250x250, but feel free to adjust.
@@ -263,7 +272,12 @@ if __name__ == '__main__':
     # if not found:
     #     print("No defective patch found where mask_patch.max() > 0.")
 
-    run(UNetBatchNorm, dataloaders, dataset_name, save_name="Patched_BN_NIO_NoAug_20_Adam")    
+     # Print experiment details
+    print(f"Running experiment: {args.experiment}")
+    print(f"Batch Size: {args.batch_size}, Patch Size: {args.patch_size}, Learning Rate: {args.lr}")
+    print(f"Augmentation: {'Enabled' if args.augment else 'Disabled'}")
+
+    run(UNetBatchNorm, dataloaders, dataset_name)    
     # model = UNetBatchNorm(in_channels=3, out_channels=1, init_features=32)
 
     

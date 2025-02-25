@@ -234,7 +234,7 @@ if __name__ == '__main__':
         root_dir= 'data/Dichtflächen'
         dataset_name = 'Dichtflächen'
         
-        train_dir = process_images(dataset_name,downsample_factor=2,patch_size=192)
+        train_dir = process_images(dataset_name,downsample_factor=2,patch_size=250)
         #process_test_images(dataset_name,patch_size=192,downsample_factor=2,output_processed=None)
 
      except Exception as e:
