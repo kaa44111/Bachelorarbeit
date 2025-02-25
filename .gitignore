@@ -108,3 +108,5 @@ ENV/
 
 # pytype static type analyzer
 .pytype/
+
+.vscode/

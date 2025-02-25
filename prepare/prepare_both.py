@@ -231,8 +231,8 @@ if __name__ == '__main__':
         '''
         Default dataset_name = data/{dataset_name}
         '''
-        root_dir= 'data/Dichtflächen_Cropped'
-        dataset_name = 'Dichtflächen_Cropped'
+        root_dir= 'data/Dichtflächen'
+        dataset_name = 'Dichtflächen'
         
         train_dir = process_images(dataset_name,downsample_factor=2,patch_size=192)
         #process_test_images(dataset_name,patch_size=192,downsample_factor=2,output_processed=None)

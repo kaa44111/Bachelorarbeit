@@ -9,10 +9,10 @@ if project_path not in sys.path:
 import torch
 import torch.nn as nn
 from torch.nn.functional import relu
-from torchsummary import summary
+#from torchsummary import summary
 import torch
 from torch.autograd import Variable
-from torchviz import make_dot
+#from torchviz import make_dot
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         # Conv2d(in_channels, out_channels, kernel_size, padding, dilation, groups, bias, padding_mode, device, dtype)
@@ -27,13 +27,13 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # padding_mode:
         # device:
         # dtype:
-def plot_graph(model):
-    # Dummy-Input für das Modell
-    x = Variable(torch.randn(1, 3, 128, 128)).to(device)
-    y = model(x)
-    params_dict = dict(list(model.named_parameters()))
-    # Erstelle und speichere das Diagramm des Computation Graphs
-    make_dot(y.mean(), params=params_dict).render("unet_batchnorm", format="png")
+# def plot_graph(model):
+#     # Dummy-Input für das Modell
+#     x = Variable(torch.randn(1, 3, 128, 128)).to(device)
+#     y = model(x)
+#     params_dict = dict(list(model.named_parameters()))
+#     # Erstelle und speichere das Diagramm des Computation Graphs
+#     make_dot(y.mean(), params=params_dict).render("unet_batchnorm", format="png")
 
 
 class UNetBatchNorm(nn.Module):
