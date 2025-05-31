@@ -1,13 +1,14 @@
-import os
 import sys
+import os
+
+#Den Projektpfad zu sys.path hinzufügen
+project_path = os.path.abspath(os.path.dirname(__file__))
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+    
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
-
-# Add parent directory to PYTHONPATH if needed
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_path not in sys.path:
-    sys.path.append(project_path)
 
 def compute_accuracy(outputs, labels, threshold=0.5):
     # Convert model outputs to probabilities and threshold them

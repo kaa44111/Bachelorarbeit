@@ -1,5 +1,11 @@
-import os
 import sys
+import os
+
+#Den Projektpfad zu sys.path hinzufügen
+project_path = os.path.abspath(os.path.dirname(__file__))
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
 import time
 import copy
 from collections import defaultdict
@@ -13,77 +19,12 @@ from torch.cuda.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 import matplotlib.pyplot as plt
+from metrics import compute_accuracy, calc_loss, calculate_iou, calculate_f1
 
-# Add parent directory to PYTHONPATH if needed
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_path not in sys.path:
-    sys.path.append(project_path)
-    
-# from .config import get_args  # Import CLI arguments
-# # Get command-line arguments
-# args = get_args()
-
-import argparse
-
-def get_args():
-    """
-    Defines and parses command-line arguments for experimentation.
-    """
-    parser = argparse.ArgumentParser(description="U-Net Training Experiments")
-
-    # Experiment configuration
-    parser.add_argument("--experiment", type=str, default="baseline", help="Experiment name")
-    parser.add_argument("--batch_size", type=int, default=16, help="Batch size")
-    parser.add_argument("--patch_size", type=int, default=250, help="Patch size for cropping")
-    parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate")
-    parser.add_argument("--epochs", type=int, default=30, help="Number of training epochs")
-    parser.add_argument("--scheduler", type=str, default="StepLR", choices=["StepLR", "ReduceLROnPlateau"], help="Scheduler type")
-    parser.add_argument("--augment", action="store_true", help="Use data augmentation")
-    parser.add_argument("--batch_norm", action="store_true", help="Use Batch Normalization")
-    parser.add_argument("--pretrained", action="store_true", help="Use pretrained encoder")
-
-    return parser.parse_args()
+from config import get_args  # Import CLI arguments
+# Get command-line arguments
 args = get_args()
 
-
-def compute_accuracy(outputs, labels, threshold=0.5):
-    # Convert model outputs to probabilities and threshold them
-    preds = (torch.sigmoid(outputs) > threshold).float()
-    # Compare with ground truth labels (assumed binary)
-    correct = (preds == labels).float().sum()
-    total = torch.numel(labels)
-    return correct / total
-
-# Loss Functions
-def dice_loss(pred, target, smooth=1.0):
-    intersection = (pred * target).sum(dim=2).sum(dim=2)
-    dice = (2.0 * intersection + smooth) / (pred.sum(dim=2).sum(dim=2) + target.sum(dim=2).sum(dim=2) + smooth)
-    return (1 - dice).mean()
-
-def calculate_iou(pred, target, threshold=0.5):
-    # Binarize predictions and targets
-    pred = (pred > threshold).float()
-    target = (target > threshold).float()
-    intersection = (pred * target).sum()
-    union = pred.sum() + target.sum() - intersection
-    return (intersection + 1e-6) / (union + 1e-6)
-
-def calculate_f1(pred, target, threshold=0.5):
-    pred = (pred > threshold).float()
-    tp = (pred * target).sum()
-    fp = (pred * (1 - target)).sum()
-    fn = ((1 - pred) * target).sum()
-    return (2*tp + 1e-6)/(2*tp + fp + fn + 1e-6)
-
-def calc_loss(pred, target, metrics, bce_weight=0.5):
-    bce = F.binary_cross_entropy_with_logits(pred, target)
-    dice = dice_loss(torch.sigmoid(pred), target)
-    loss = bce * bce_weight + dice * (1 - bce_weight)
-    batch_size = target.size(0)
-    metrics['bce'] += bce.item() * batch_size
-    metrics['dice'] += dice.item() * batch_size
-    metrics['loss'] += loss.item() * batch_size
-    return loss
 
 # Training Function
 def train_model(model, dataloaders, optimizer, scheduler, num_epochs=25, save_name=None):

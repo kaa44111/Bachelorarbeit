@@ -1,10 +1,10 @@
 import sys
 import os
 
-# Initialisierung des PYTHONPATH
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+#Den Projektpfad zu sys.path hinzufügen
+project_path = os.path.abspath(os.path.dirname(__file__))
 if project_path not in sys.path:
-    sys.path.append(project_path)
+    sys.path.insert(0, project_path)
 
 from PIL import Image
 import numpy as np
@@ -231,10 +231,10 @@ if __name__ == '__main__':
         '''
         Default dataset_name = data/{dataset_name}
         '''
-        root_dir= 'data/Dichtflächen'
-        dataset_name = 'Dichtflächen'
+        root_dir= 'data/Dichtflächen_Cropped'
+        dataset_name = 'Dichtflächen_Cropped'
         
-        train_dir = process_images(dataset_name,downsample_factor=2,patch_size=250)
+        train_dir = process_images(dataset_name,downsample_factor=2,patch_size=190)
         #process_test_images(dataset_name,patch_size=192,downsample_factor=2,output_processed=None)
 
      except Exception as e:

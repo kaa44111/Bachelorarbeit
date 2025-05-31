@@ -1,5 +1,11 @@
-import os
 import sys
+import os
+
+#Den Projektpfad zu sys.path hinzufügen
+project_path = os.path.abspath(os.path.dirname(__file__))
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+    
 import numpy as np
 import torch
 from PIL import Image
@@ -7,11 +13,6 @@ import matplotlib.pyplot as plt
 
 from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import v2
-
-# Add project root to PYTHONPATH (if needed)
-project_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if project_path not in sys.path:
-    sys.path.append(project_path)
 
 from train.config import get_args  # Import CLI arguments
 # Get command-line arguments

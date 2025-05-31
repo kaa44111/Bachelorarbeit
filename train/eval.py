@@ -1,12 +1,10 @@
-import os, sys
-# Get the directory of the current file
-current_dir = os.path.dirname(os.path.abspath(__file__))
+import sys
+import os
 
-# Set the project root to be the parent directory of the current file
-project_root = os.path.abspath(os.path.join(current_dir, '..'))
-# Add project root to the Python path if it's not already there
-if project_root not in sys.path:
-    sys.path.append(project_root)
+#Den Projektpfad zu sys.path hinzufügen
+project_path = os.path.abspath(os.path.dirname(__file__))
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
 
 
 import torch
@@ -16,7 +14,6 @@ from collections import defaultdict
 
 import torch
 from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
 import numpy as np
 from PIL import Image
 import os
@@ -61,7 +58,6 @@ def load_model(checkpoint_path, model_class, device, **model_kwargs):
 print("Model weights loaded successfully.")
 
 def visualize_predictions(model, dataloader, num_samples=3, threshold=0.5):
-    import matplotlib.pyplot as plt
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
     model.eval()
